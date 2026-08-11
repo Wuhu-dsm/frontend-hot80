@@ -29,9 +29,14 @@ const selectedIds =
     ? all.map((d) => d.id)
     : selection.split(',').map((s) => s.trim()).filter(Boolean);
 
-const token = process.env.RELEASE_PAT || process.env.GITHUB_TOKEN;
-if (!token) {
+const gitToken = process.env.RELEASE_PAT || process.env.GITHUB_TOKEN;
+const npmToken = process.env.NODE_AUTH_TOKEN || process.env.GITHUB_TOKEN || gitToken;
+if (!gitToken) {
   console.error('RELEASE_PAT or GITHUB_TOKEN required to push downstream repos');
+  process.exit(1);
+}
+if (!npmToken) {
+  console.error('NODE_AUTH_TOKEN or GITHUB_TOKEN required to install from GitHub Packages');
   process.exit(1);
 }
 
@@ -85,7 +90,7 @@ for (const id of selectedIds) {
 
   const work = mkdtempSync(join(tmpdir(), `downstream-${id}-`));
   try {
-    const cloneUrl = `https://x-access-token:${token}@github.com/${entry.repo}.git`;
+    const cloneUrl = `https://x-access-token:${gitToken}@github.com/${entry.repo}.git`;
     runInherit(`git clone --depth 1 --branch ${entry.branch} "${cloneUrl}" "${work}"`);
 
     const pkgPath = join(work, 'package.json');
@@ -107,7 +112,7 @@ for (const id of selectedIds) {
       join(work, '.npmrc'),
       [
         '@wuhu-dsm:registry=https://npm.pkg.github.com',
-        `//npm.pkg.github.com/:_authToken=${token}`,
+        `//npm.pkg.github.com/:_authToken=${npmToken}`,
         '',
       ].join('\n'),
     );
@@ -115,7 +120,7 @@ for (const id of selectedIds) {
     const pm = entry.packageManager || 'pnpm';
     runInherit(pm === 'pnpm' ? 'pnpm install' : 'npm install', {
       cwd: work,
-      env: { ...process.env, NODE_AUTH_TOKEN: token },
+      env: { ...process.env, NODE_AUTH_TOKEN: npmToken },
     });
 
     // Never commit token-bearing .npmrc
