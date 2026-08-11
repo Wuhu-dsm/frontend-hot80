@@ -1,6 +1,6 @@
 {
   "name": "@wuhu-dsm/hot80-foo",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "POC publishable package foo for frontend-hot80 release pipeline",
   "type": "module",
   "main": "./dist/index.js",
