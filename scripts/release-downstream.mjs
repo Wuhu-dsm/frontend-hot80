@@ -94,7 +94,8 @@ for (const id of selectedIds) {
       continue;
     }
 
-    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+    const pkgText = readFileSync(pkgPath, 'utf8').replace(/^\uFEFF/, '');
+    const pkg = JSON.parse(pkgText);
     const changed = pinDeps(pkg, manifest.packages);
     if (!changed) {
       results.push({ id, status: 'noop', reason: 'no matching deps' });
