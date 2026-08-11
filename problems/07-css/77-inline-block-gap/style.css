@@ -1,0 +1,7 @@
+span {
+  display: inline-block;
+  width: 60px;
+  height: 40px;
+  background: #93c5fd;
+}
+/* TODO: 修复 .fixed 中间隙 */

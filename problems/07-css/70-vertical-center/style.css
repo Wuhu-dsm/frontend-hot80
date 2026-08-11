@@ -1,0 +1,14 @@
+/* TODO: 实现多种居中 */
+.demo {
+  height: 160px;
+  border: 1px dashed #888;
+  margin-bottom: 16px;
+}
+.box {
+  width: 80px;
+  height: 40px;
+  background: #3b82f6;
+  color: #fff;
+  text-align: center;
+  line-height: 40px;
+}
