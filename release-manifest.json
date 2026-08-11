@@ -1,12 +1,12 @@
 {
   "bumped": "patch",
-  "createdAt": "2026-08-11T16:38:48.031Z",
+  "createdAt": "2026-08-11T16:40:33.943Z",
   "packages": {
-    "@wuhu-dsm/hot80-bar": "0.0.2",
-    "@wuhu-dsm/hot80-foo": "0.0.2"
+    "@wuhu-dsm/hot80-bar": "0.0.3",
+    "@wuhu-dsm/hot80-foo": "0.0.3"
   },
   "tags": [
-    "@wuhu-dsm/hot80-bar@0.0.2",
-    "@wuhu-dsm/hot80-foo@0.0.2"
+    "@wuhu-dsm/hot80-bar@0.0.3",
+    "@wuhu-dsm/hot80-foo@0.0.3"
   ]
 }
