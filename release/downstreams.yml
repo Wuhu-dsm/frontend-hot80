@@ -1,0 +1,8 @@
+# Downstream Catalog — source of truth for Downstream Update Gate
+# See CONTEXT.md
+
+downstreams:
+  - id: downstream-demo
+    repo: Wuhu-dsm/frontend-hot80-downstream-demo
+    branch: main
+    packageManager: pnpm

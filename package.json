@@ -2,8 +2,9 @@
   "name": "frontend-hot80",
   "version": "1.0.0",
   "private": true,
-  "description": "前端面试手写题 HOT80 练习项目",
+  "description": "前端面试手写题 HOT80 练习项目 + POC 发包源仓",
   "type": "module",
+  "packageManager": "pnpm@9.15.0",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
@@ -11,7 +12,10 @@
     "test:react": "vitest run problems/05-react-components problems/06-react-hooks",
     "test:problem": "vitest run",
     "dev:css": "vite --config vite.css.config.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:packages": "pnpm -r --filter \"./packages/**\" run build",
+    "release:publish": "node scripts/release-publish.mjs",
+    "release:downstream": "node scripts/release-downstream.mjs"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",

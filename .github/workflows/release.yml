@@ -1,0 +1,122 @@
+name: Release
+
+# Release Run = Publish Gate (this dispatch) + Downstream Update Gate (environment approval)
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Shared Bump Policy
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+      downstreams:
+        description: Downstream selection (Catalog ids, or all/none)
+        required: true
+        type: choice
+        options:
+          - none
+          - all
+          - downstream-demo
+        default: none
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  publish:
+    name: Publish Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: https://npm.pkg.github.com
+          scope: '@wuhu-dsm'
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install
+
+      - name: Publish all packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/release-publish.mjs ${{ inputs.bump }}
+
+      - name: Commit versions + tags (only after all publishes succeed)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/*/package.json release-manifest.json pnpm-lock.yaml
+          git commit -m "chore(release): ${{ inputs.bump }} bump [skip ci]" || echo "No version files changed"
+          while IFS= read -r tag; do
+            git tag -a "$tag" -m "$tag" || true
+          done < <(node -e "const m=require('./release-manifest.json'); m.tags.forEach(t=>console.log(t))")
+          git push origin HEAD:${{ github.ref_name }}
+          git push origin --tags
+
+      - name: Upload release manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-manifest
+          path: |
+            release-manifest.json
+
+  downstream:
+    name: Downstream Update Gate
+    needs: publish
+    if: inputs.downstreams != 'none'
+    runs-on: ubuntu-latest
+    # Second manual gate: add required reviewers on this Environment in repo Settings
+    environment: downstream-update
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Download release manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: release-manifest
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Update selected downstreams
+        env:
+          RELEASE_PAT: ${{ secrets.RELEASE_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/release-downstream.mjs ${{ inputs.downstreams }}
+
+      - name: Upload downstream results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: downstream-results
+          path: downstream-results.json
+          if-no-files-found: ignore

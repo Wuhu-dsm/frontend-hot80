@@ -1,0 +1,34 @@
+{
+  "name": "@wuhu-dsm/hot80-bar",
+  "version": "0.0.0",
+  "description": "POC publishable package bar for frontend-hot80 release pipeline",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "pnpm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Wuhu-dsm/frontend-hot80.git",
+    "directory": "packages/hot80-bar"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@wuhu-dsm/hot80-foo": "workspace:*"
+  }
+}
