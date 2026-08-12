@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(**/*)",
+      "Write(review.json)",
+      "Shell(ls)",
+      "Shell(find)",
+      "Shell(grep)",
+      "Shell(rg)",
+      "Shell(cat)",
+      "Shell(head)",
+      "Shell(tail)",
+      "Shell(wc)",
+      "Shell(git:diff*)",
+      "Shell(git:show*)",
+      "Shell(git:log*)",
+      "Shell(git:rev-parse*)"
+    ],
+    "deny": [
+      "Shell(gh)",
+      "Shell(rm)",
+      "Shell(curl)",
+      "Shell(wget)",
+      "Write(.env*)",
+      "Write(package.json)",
+      "Write(package-lock.json)",
+      "Write(**/.github/**)",
+      "Write(**/.git/**)"
+    ]
+  }
+}

@@ -47,3 +47,21 @@ npm run dev:css
 4. CSS 题对照 `checklist.md`，用浏览器预览验收
 
 完整目录见 [problems/README.md](./problems/README.md)。
+
+## CI：Cursor Agent 代码评审
+
+对 `main` 的 Pull Request（非 draft、非 fork）会触发 [`.github/workflows/cursor-code-review.yml`](./.github/workflows/cursor-code-review.yml)：
+
+1. 安装 Cursor Agent CLI
+2. 基于 PR diff 做项目级代码评审
+3. 将**总评 + inline 行评**以 GitHub Review（`COMMENT`，非阻塞）发到 PR
+
+### 需要配置的 Secret
+
+在仓库 **Settings → Secrets and variables → Actions** 新增：
+
+| Name | 说明 |
+| --- | --- |
+| `CURSOR_API_KEY` | 在 [Cursor Dashboard](https://cursor.com/docs/cli/reference/authentication.md#api-key-authentication) 生成的 API Key |
+
+未配置该 Secret 时，评审 job 会失败。Agent 权限由 [`.cursor/cli.json`](./.cursor/cli.json) 限制为只读分析并仅写入 `review.json`；评论由 [`scripts/post-pr-review.mjs`](./scripts/post-pr-review.mjs) 确定性提交。

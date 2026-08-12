@@ -1,0 +1,94 @@
+name: Cursor Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches:
+      - main
+
+concurrency:
+  group: cursor-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  code-review:
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install Cursor CLI
+        run: |
+          curl https://cursor.com/install -fsS | bash
+          echo "$HOME/.cursor/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Prepare PR diff
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch origin "$BASE_REF" --depth=1
+          git diff "origin/${BASE_REF}...HEAD" > pr.diff
+          if [ ! -s pr.diff ]; then
+            echo "No diff against origin/${BASE_REF}; skipping review."
+            echo "SKIP_REVIEW=1" >> "$GITHUB_ENV"
+          fi
+
+      - name: Run Cursor Agent review
+        if: env.SKIP_REVIEW != '1'
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          MODEL: composer-2.5
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [ -z "${CURSOR_API_KEY}" ]; then
+            echo "::error::Missing repository secret CURSOR_API_KEY. Add it under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+          AGENT_BIN=""
+          for candidate in agent cursor-agent; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              AGENT_BIN="$candidate"
+              break
+            fi
+          done
+          if [ -z "$AGENT_BIN" ]; then
+            echo "::error::Cursor Agent CLI not found after install (expected agent or cursor-agent)."
+            exit 1
+          fi
+
+          PROMPT_FILE="$(mktemp)"
+          sed \
+            -e "s/__PR_NUMBER__/${PR_NUMBER}/g" \
+            -e "s/__HEAD_SHA__/${HEAD_SHA}/g" \
+            .github/cursor-review-prompt.md > "$PROMPT_FILE"
+
+          "$AGENT_BIN" -p --force --output-format text --model "$MODEL" "$(cat "$PROMPT_FILE")"
+          rm -f "$PROMPT_FILE"
+
+          if [ ! -f review.json ]; then
+            echo "::error::Agent did not produce review.json"
+            exit 1
+          fi
+
+      - name: Post review to PR
+        if: env.SKIP_REVIEW != '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/post-pr-review.mjs
